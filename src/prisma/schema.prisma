@@ -1,0 +1,279 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LessonType {
+  FOUNDATION
+  DEVELOPMENT
+}
+
+enum LessonLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum ContentType {
+  VIDEO
+  TEXT
+}
+
+enum VoteType {
+  FOR
+  AGAINST
+}
+
+enum ProposalStatus {
+  PENDING
+  ACTIVE
+  CLOSED
+}
+
+model User {
+  id             Int           @id @default(autoincrement())
+  username       String        @unique
+  name           String
+  points         Int           @default(0)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  enrollments    Enrollment[]
+  completions    Completion[]  // Optional separate model if needed beyond enrollment status
+  proposals      Proposal[]
+  votes          Vote[]
+  comments       Comment[]
+  organizerEvents Event[]
+  attendeeTickets Ticket[]
+  holders        Holder[]
+  progresses     Progress[]
+  awards         UserAward[]
+
+  @@map("users")
+}
+
+model CoreTeamMember {
+  id                Int      @id @default(autoincrement())
+  name              String
+  title             String
+  description       String?
+  github            String?
+  twitter           String?
+  linkedin          String?
+  certifications    Json?    // Array of certification objects or strings
+  achievements      Json?    // Array of achievement objects or strings
+  daoContributions  Json?    // Array of DAO contribution objects or strings
+  nftBadges         String[] // Array of NFT badge IDs or titles
+  createdAt         DateTime @default(now())
+
+  @@map("core_team_members")
+}
+
+model Lesson {
+  id            Int             @id @default(autoincrement())
+  title         String
+  description   String?
+  category      String?
+  points        Int
+  type          LessonType
+  level         LessonLevel
+  minutes       Int
+  contentType   ContentType
+  content       String?         // Text blob for TEXT type
+  videoUrl      String?         // URL for VIDEO type
+  badgeId       Int?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  badge         Badge?          @relation(fields: [badgeId], references: [id])
+  enrollments   Enrollment[]
+  completions   Completion[]
+
+  @@map("lessons")
+}
+
+model Enrollment {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  lessonId     Int
+  enrolledAt   DateTime @default(now())
+  completed    Boolean  @default(false)
+  completedAt  DateTime?
+  progress     Int      @default(0) // Optional progress tracking (0-100)
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson       Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@map("enrollments")
+}
+
+model Badge {
+  id          Int         @id @default(autoincrement())
+  name        String
+  image       String?
+  description String?
+  createdAt   DateTime    @default(now())
+
+  lessons     Lesson[]
+  awards      UserAward[]
+
+  @@map("badges")
+}
+
+model UserAward {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  badgeId    Int
+  awardedAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge      Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@map("user_awards")
+}
+
+model Proposal {
+  id             Int              @id @default(autoincrement())
+  title          String
+  emoji          String?
+  description    String
+  location       String?
+  likes          Int              @default(0)
+  status         ProposalStatus   @default(PENDING)
+  quorumProgress Float?
+  endDate        DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  userId         Int
+
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes          Vote[]
+  comments       Comment[]
+
+  @@map("proposals")
+}
+
+model Vote {
+  id           Int        @id @default(autoincrement())
+  type         VoteType
+  createdAt    DateTime   @default(now())
+
+  proposalId   Int
+  userId       Int
+
+  proposal     Proposal   @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([proposalId, userId])
+  @@map("votes")
+}
+
+model Comment {
+  id          Int       @id @default(autoincrement())
+  content     String
+  createdAt   DateTime  @default(now())
+
+  proposalId  Int
+  userId      Int
+
+  proposal    Proposal  @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+model Event {
+  id            Int       @id @default(autoincrement())
+  title         String
+  description   String?
+  duration      Int?      // In minutes
+  dateTime      DateTime
+  location      String    // "online" or physical address
+  attendeeCount Int       @default(0)
+  ticketPrice   Float?    @default(0)
+  createdAt     DateTime  @default(now())
+
+  organizerId   Int
+
+  organizer     User      @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  tickets       Ticket[]
+
+  @@map("events")
+}
+
+model Ticket {
+  id          Int      @id @default(autoincrement())
+  purchasedAt DateTime @default(now())
+
+  eventId     Int
+  userId      Int
+
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@map("tickets")
+}
+
+model NFT {
+  id          Int        @id @default(autoincrement())
+  category    String
+  image       String     // Image URL
+  adjective   String?
+  title       String
+  description String?
+  requirement String?
+  createdAt   DateTime   @default(now())
+
+  holders     Holder[]
+  progresses  Progress[]
+
+  @@map("nfts")
+}
+
+model Holder {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  nftId        Int
+  acquiredAt   DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nft          NFT      @relation(fields: [nftId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, nftId])
+  @@map("holders")
+}
+
+model Progress {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  nftId      Int
+  progress   Int      // 0-100
+  updatedAt  DateTime @updatedAt
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nft        NFT      @relation(fields: [nftId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, nftId])
+  @@map("progresses")
+}
+
+model Completion {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  lessonId     Int
+  completedAt  DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson       Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@map("completions")
+}
