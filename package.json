@@ -6,7 +6,7 @@
     "dev": "ts-node-dev -r tsconfig-paths/register --respawn src/server.ts",
     "build": "tsc",
     "start": "node -r tsconfig-paths/register dist/server.js",
-    "postinstall": "prisma generate"
+    "postinstall": "npx prisma generate"
   },
   "keywords": [],
   "author": "",
