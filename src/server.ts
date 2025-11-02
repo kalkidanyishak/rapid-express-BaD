@@ -10,12 +10,24 @@ const PORT =process.env.PORT || 3000;
 
 // Middleware to parse JSON
 app.use(express.json());
+const allowedOrigins = [
+  "http://localhost:3001",
+  "https://bad-ethiopia.vercel.app"
+];
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3001",
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
+
 
 app.use(endpoint("/api/user", "user"));
 app.use(endpoint("/api/core-team-member", "coreTeamMember"));
