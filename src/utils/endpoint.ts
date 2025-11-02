@@ -34,7 +34,8 @@ const endpoint = (route: string, schemaName: keyof PrismaClient) => {
   // READ by ID
   router.get(`${route}/:id`, async (req, res) => {
     const { id } = req.params;
-    const [err, item] = await go(delegate.findUnique({ where: { id } }));
+    const numericId = parseInt(id, 10);
+    const [err, item] = await go(delegate.findUnique({ where: { id: numericId } }));
 
     if (err)
       return res
@@ -48,8 +49,9 @@ const endpoint = (route: string, schemaName: keyof PrismaClient) => {
   // UPDATE (PUT = full update)
   router.put(`${route}/:id`, async (req, res) => {
     const { id } = req.params;
+    const numericId = parseInt(id, 10);
     const [err, item] = await go(
-      delegate.update({ where: { id }, data: req.body })
+      delegate.update({ where: { id: numericId }, data: req.body })
     );
 
     if (err)
@@ -65,8 +67,9 @@ const endpoint = (route: string, schemaName: keyof PrismaClient) => {
   // PATCH (partial update)
   router.patch(`${route}/:id`, async (req, res) => {
     const { id } = req.params;
+    const numericId = parseInt(id, 10);
     const [err, item] = await go(
-      delegate.update({ where: { id }, data: req.body })
+      delegate.update({ where: { id: numericId }, data: req.body })
     );
 
     if (err)
@@ -82,7 +85,8 @@ const endpoint = (route: string, schemaName: keyof PrismaClient) => {
   // DELETE
   router.delete(`${route}/:id`, async (req, res) => {
     const { id } = req.params;
-    const [err] = await go(delegate.delete({ where: { id } }));
+    const numericId = parseInt(id, 10);
+    const [err] = await go(delegate.delete({ where: { id: numericId } }));
 
     if (err)
       return res
