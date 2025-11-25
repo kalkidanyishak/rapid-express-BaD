@@ -12,7 +12,7 @@ const PORT =process.env.PORT || 3000;
 app.use(express.json());
 const allowedOrigins = [
   "http://localhost:3001",
-  "https://bad-ethiopia.vercel.app"
+  "https://bad.et"
 ];
 
 app.use(
